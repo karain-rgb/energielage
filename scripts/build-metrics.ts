@@ -1,8 +1,16 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fetchAgsi } from "./sources/agsi";
-import { seasonalCorridor } from "./lib/context";
+import { fetchEiaSeries } from "./sources/eia";
+import { seasonalCorridor, referencePoints } from "./lib/context";
 import { fuerAnzeige } from "./lib/series";
-import type { Metric, SeriesPoint } from "../src/types";
+import type { Cadence, Metric, SeriesPoint } from "../src/types";
+
+const EIA_QUELLE = {
+  name: "U.S. Energy Information Administration",
+  url: "https://www.eia.gov/opendata/",
+};
+const BRENT_ID = "RBRTE";
+const SPR_ID = "WCSSTUS1";
 
 export function buildGasStorage(
   series: SeriesPoint[],
@@ -24,6 +32,29 @@ export function buildGasStorage(
     current: last.v,
     series: fuerAnzeige(series, last.d),
     context: seasonalCorridor(series, last.d),
+  };
+}
+
+export function buildPreisMetric(
+  id: string,
+  unit: string,
+  cadence: Cadence,
+  quelle: { name: string; url: string },
+  series: SeriesPoint[],
+  fetchedAt: string
+): Metric {
+  const last = series[series.length - 1];
+  if (!last) throw new Error(`${id}: leere Reihe`);
+  return {
+    id,
+    unit,
+    fetchedAt,
+    sourceDate: last.d,
+    cadence,
+    source: quelle,
+    current: last.v,
+    series,
+    context: referencePoints(series, cadence),
   };
 }
 
@@ -58,12 +89,65 @@ async function schreibe(metric: Metric): Promise<void> {
   console.log(`${metric.id}: ${metric.current} ${metric.unit} (${metric.sourceDate})`);
 }
 
-async function main(): Promise<void> {
-  const fetchedAt = new Date().toISOString();
+// Eine Quelle pro Kennzahl. Jede liefert ihr fertiges Metric-Objekt selbst —
+// main() weiß nichts über AGSI/EIA-Details und muss beim Hinzufügen einer
+// weiteren Quelle (Task 8, 9) nur um einen Eintrag ergänzt werden.
+interface Quelle {
+  id: string;
+  hole: (fetchedAt: string) => Promise<Metric>;
+}
+
+async function holeGasStorage(fetchedAt: string): Promise<Metric> {
   const key = process.env.AGSI_KEY;
   if (!key) throw new Error("AGSI_KEY fehlt");
+  return buildGasStorage(await fetchAgsi(key), fetchedAt);
+}
 
-  await schreibe(buildGasStorage(await fetchAgsi(key), fetchedAt));
+async function holeBrent(fetchedAt: string): Promise<Metric> {
+  const key = process.env.EIA_KEY;
+  if (!key) throw new Error("EIA_KEY fehlt");
+  const series = await fetchEiaSeries(key, "petroleum/pri/spt", BRENT_ID, "daily");
+  return buildPreisMetric("brent", "USD/Barrel", "daily", EIA_QUELLE, series, fetchedAt);
+}
+
+async function holeSpr(fetchedAt: string): Promise<Metric> {
+  const key = process.env.EIA_KEY;
+  if (!key) throw new Error("EIA_KEY fehlt");
+  const series = await fetchEiaSeries(key, "petroleum/stoc/wstk", SPR_ID, "weekly");
+  return buildPreisMetric("us-spr", "Tsd. Barrel", "weekly", EIA_QUELLE, series, fetchedAt);
+}
+
+const QUELLEN: Quelle[] = [
+  { id: "gas-storage-de", hole: holeGasStorage },
+  { id: "brent", hole: holeBrent },
+  { id: "us-spr", hole: holeSpr },
+];
+
+// Jede Quelle läuft isoliert: Fällt eine aus (AGSI hatte bereits zweimal einen
+// Timeout), sollen die anderen trotzdem geschrieben werden und die Seite
+// zeigt für die ausgefallene Quelle weiter ihren letzten bekannten Stand.
+// Exit 0 sobald mindestens eine Quelle erfolgreich war — der Commit-Schritt
+// im Workflow läuft nur bei Erfolg, ein Non-Zero-Exit würde also auch die
+// erfolgreichen Quellen verwerfen. Exit 1 nur, wenn wirklich nichts zu
+// committen ist.
+async function main(): Promise<void> {
+  const fetchedAt = new Date().toISOString();
+
+  let erfolge = 0;
+  let fehlschlaege = 0;
+
+  for (const quelle of QUELLEN) {
+    try {
+      await schreibe(await quelle.hole(fetchedAt));
+      erfolge++;
+    } catch (err) {
+      fehlschlaege++;
+      console.error(`::error::${quelle.id}: Abruf fehlgeschlagen — ${String(err)}`);
+    }
+  }
+
+  console.log(`Abruf abgeschlossen: ${erfolge} erfolgreich, ${fehlschlaege} fehlgeschlagen.`);
+  if (erfolge === 0) process.exit(1);
 }
 
 // Nur ausführen, wenn direkt aufgerufen — nicht beim Import im Test.
