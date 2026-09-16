@@ -1,7 +1,9 @@
 import type {
   Cadence,
+  CorridorDay,
   ReferencePoint,
   ReferencePointsContext,
+  SeasonalCorridorContext,
   SeriesPoint,
 } from "../../src/types";
 
@@ -68,5 +70,49 @@ export function referencePoints(
     yearAgo: makeRef(current, findYearAgo(points, cadence)),
     preCrisis: makeRef(current, preCrisisMean),
     peak2022: makeRef(current, peak),
+  };
+}
+
+function median(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 0 ? (s[mid - 1]! + s[mid]!) / 2 : s[mid]!;
+}
+
+export function seasonalCorridor(
+  series: SeriesPoint[],
+  today: string,
+  years = 10
+): SeasonalCorridorContext {
+  const currentYear = Number(today.slice(0, 4));
+  const earliestYear = currentYear - years;
+
+  const buckets = new Map<string, number[]>();
+  for (const p of series) {
+    const year = Number(p.d.slice(0, 4));
+    // Das laufende Jahr darf nicht sein eigener Maßstab sein.
+    if (year >= currentYear || year < earliestYear) continue;
+    const md = p.d.slice(5, 10);
+    const bucket = buckets.get(md);
+    if (bucket) bucket.push(p.v);
+    else buckets.set(md, [p.v]);
+  }
+
+  const corridor: CorridorDay[] = [...buckets.entries()]
+    .map(([md, values]) => ({
+      md,
+      min: Math.min(...values),
+      max: Math.max(...values),
+      median: median(values),
+    }))
+    .sort((a, b) => a.md.localeCompare(b.md));
+
+  const todayMd = today.slice(5, 10);
+  const todayEntry = corridor.find((c) => c.md === todayMd);
+
+  return {
+    kind: "seasonal-corridor",
+    typicalNow: todayEntry ? todayEntry.median : null,
+    corridor,
   };
 }
