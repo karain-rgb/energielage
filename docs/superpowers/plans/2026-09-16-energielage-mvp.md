@@ -1409,7 +1409,10 @@ export function buildPreisMetric(
     cadence,
     source: quelle,
     current: last.v,
-    series,
+    // Nur das ausgelieferte Feld wird gedünnt (Ruling 10). `referencePoints`
+    // bekommt weiterhin die vollständige Reihe — mit der gedünnten wären
+    // Vorkrisen-Mittel und Höchststand 2022 still falsch.
+    series: fuerAnzeige(series, last.d),
     context: referencePoints(series, cadence),
   };
 }

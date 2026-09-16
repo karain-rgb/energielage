@@ -339,7 +339,15 @@ veralteten Wert als aktuell zu zeigen.
   Lizenz und Bezugsweg beim Bau prüfen.
 - **Tabellenziffern in Sora prüfen** und bei Bedarf einen der beiden in
   Abschnitt 8.1 genannten Auswege wählen.
-- **Gestaltung verfeinern**, sobald die Seite mit echten Daten läuft.
+- **Gestaltung verfeinern**, sobald die Seite mit echten Daten läuft. Der Nutzer
+  hat die Richtung inzwischen präzisiert: **bunter und schicker** als der jetzige
+  nüchterne Stand. Wichtig für den späteren Entwurf ist die Vorgeschichte — beim
+  Vergleich dreier Richtungen wurde die farbige, kachelbetonte Variante
+  („Sunshift-nah") ausdrücklich *nicht* gewählt, sondern die nüchterne als
+  vorläufiger Unterbau. Gesucht ist also nicht der Sprung zur bunten Variante,
+  sondern mehr Farbe und Feinschliff auf dem nüchternen Fundament. Die Farbe
+  sollte weiter etwas bedeuten, statt nur zu schmücken — bei Preisdaten kippt ein
+  sattes Farbschema schnell in Wertung um.
 - **Domain** registrieren und per CNAME anbinden.
 
 ## 11. Nicht im Umfang
