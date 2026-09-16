@@ -30,6 +30,8 @@ wechselseitiger Link im Fußbereich.
 | Hosting | GitHub Pages | Vom Nutzer gewünscht; durch den statischen Aufbau problemlos möglich |
 | Sprachen | Deutsch + Englisch | Die EU- und Weltkennzahlen sind auch international interessant |
 | Gestaltung | Richtung A ("Messinstrument") | Neutraler Unterbau, später günstig umzubauen |
+| Schriftart | Sora, selbst gehostet | Vom Nutzer gewünscht; Selbst-Hosting aus DSGVO-Gründen (Abschnitt 8.1) |
+| Geräte | Ein mitwachsendes Layout | Telefon und Rechner gleichwertig (Abschnitt 8.2) |
 
 ### Zur Gestaltung
 
@@ -253,6 +255,44 @@ ehrlich sagen, wie alt eine Zahl wirklich ist.
 im Einsatz). TypeScript abweichend von Sunshift, weil hier die Datenformen die
 eigentliche Fehlerquelle sind.
 
+### 8.1 Typografie
+
+**Schriftart: Sora**, ausgeliefert als **selbst gehostete Dateien im Repo** —
+nicht über das Google-Fonts-CDN.
+
+Der Grund ist rechtlich, nicht technisch: Bindet eine Seite Google Fonts per CDN
+ein, wird bei jedem Aufruf die IP-Adresse des Besuchers an Google übertragen. Das
+LG München hat darin 2022 einen Verstoß gegen die DSGVO gesehen; in der Folge kam
+es zu einer Abmahnwelle gegen deutsche Webseiten. Für eine öffentliche Seite unter
+eigenem Namen ist Selbst-Hosting der einzig sinnvolle Weg — es kostet nichts außer
+zwei Schriftdateien im Repo und ist obendrein schneller.
+
+Eingebunden werden nur die tatsächlich benötigten Schnitte als WOFF2, mit
+`font-display: swap` und einer System-Schrift als Rückfall.
+
+**Zu prüfen beim Bau — Ziffern gleicher Breite.** Ein Dashboard mit wechselnden
+Zahlen braucht Tabellenziffern (`font-variant-numeric: tabular-nums`), sonst
+springt das Layout bei jedem Wert-Wechsel, weil eine `1` schmaler ist als eine `8`.
+Ob Sora diese Funktion mitbringt, muss an den echten Schriftdateien geprüft
+werden. Falls nicht, gibt es zwei Auswege: feste Mindestbreiten für die
+Zahlenfelder, oder eine schmale Monospace-Schrift ausschließlich für die
+Kennzahlen. Die Entscheidung fällt am sichtbaren Ergebnis, nicht vorab.
+
+### 8.2 Darstellung auf allen Geräten
+
+Die Seite muss auf dem Telefon genauso funktionieren wie am Rechner. Konkret:
+
+- **Ein Layout, das mitwächst** — die Kacheln liegen am Rechner nebeneinander
+  und auf dem Telefon untereinander. Kein getrennter Mobil-Aufbau.
+- **Diagramme bleiben lesbar.** Auf schmalen Schirmen werden Achsenbeschriftungen
+  ausgedünnt statt verkleinert; ein Chart mit unleserlicher Beschriftung ist
+  wertlos. Die Diagramme skalieren über `viewBox`, nicht über feste Pixelmaße.
+- **Bedienbar mit dem Daumen.** Das Aufklappen einer Kachel funktioniert per
+  Antippen, die Trefferflächen sind mindestens 44 × 44 px groß.
+- **Keine seitliche Scrollleiste**, auch nicht bei den breitesten Zahlen.
+- **Geprüft wird an echten Breiten**, mindestens 375 px (Telefon), 768 px (Tablet)
+  und 1280 px (Rechner).
+
 **Aufbau** — eine Seite, kein Menü:
 
 1. Kopfbereich: was das hier ist, Sprachumschalter
@@ -297,6 +337,8 @@ veralteten Wert als aktuell zu zeigen.
   Gaspreis-Kachel im MVP.
 - **xlsx-Bibliothek wählen** für das Oil Bulletin (SheetJS vs. exceljs) —
   Lizenz und Bezugsweg beim Bau prüfen.
+- **Tabellenziffern in Sora prüfen** und bei Bedarf einen der beiden in
+  Abschnitt 8.1 genannten Auswege wählen.
 - **Gestaltung verfeinern**, sobald die Seite mit echten Daten läuft.
 - **Domain** registrieren und per CNAME anbinden.
 
