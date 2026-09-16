@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildGasStorage, gleicherInhalt } from "./build-metrics";
+import { buildGasStorage, buildPreisMetric, gleicherInhalt } from "./build-metrics";
 import type { Metric, SeriesPoint } from "../src/types";
 
 const series: SeriesPoint[] = [
@@ -57,6 +57,45 @@ describe("buildGasStorage", () => {
     if (m.context.kind === "seasonal-corridor") {
       expect(m.context.typicalNow).toBe(70);
     }
+  });
+});
+
+describe("buildPreisMetric", () => {
+  // Schutz gegen genau die Regression, die unbemerkt auslief: `context` muss
+  // aus der VOLLEN Reihe berechnet werden, `series` im Ergebnis aber gedünnt
+  // sein (Ruling 10). Die fünf Januar-2019-Werte (Mo–Fr derselben ISO-Woche)
+  // fallen in fuerAnzeige auf einen einzigen Wert (den letzten, 50) zusammen —
+  // der Vorkrisen-Mittelwert der GEDÜNNTEN Reihe wäre also 50 statt 30 und der
+  // deltaPct 32 statt 120. Bitte diese Fixture NICHT vereinfachen — eine
+  // kürzere Reihe ohne Wochenkollision entwaffnet den Test wieder.
+  it("berechnet den Kontext aus der vollen Reihe, liefert aber eine gedünnte series", () => {
+    const preisReihe: SeriesPoint[] = [
+      { d: "2019-01-07", v: 10 },
+      { d: "2019-01-08", v: 20 },
+      { d: "2019-01-09", v: 30 },
+      { d: "2019-01-10", v: 40 },
+      { d: "2019-01-11", v: 50 },
+      { d: "2022-06-01", v: 100 },
+      { d: "2025-09-15", v: 60 },
+      { d: "2026-09-15", v: 66 },
+    ];
+
+    const m = buildPreisMetric(
+      "test-preis",
+      "USD/Barrel",
+      "daily",
+      { name: "Test-Quelle", url: "https://example.invalid" },
+      preisReihe,
+      "2026-09-16T04:07:00Z"
+    );
+
+    expect(m.context.kind).toBe("reference-points");
+    if (m.context.kind === "reference-points") {
+      expect(m.context.preCrisis).toEqual({ value: 30, deltaPct: 120 });
+    }
+
+    expect(m.series).toHaveLength(4);
+    expect(m.series[0]?.d).toBe("2019-01-11");
   });
 });
 
