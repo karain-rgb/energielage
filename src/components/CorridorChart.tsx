@@ -31,25 +31,31 @@ export function CorridorChart({ metric }: Props) {
     jetzt: aktuell.get(c.md) ?? null,
   }));
 
+  // Ein Tick pro Monat: Recharts wählt Ticks über die Pixelbreite des formatierten Labels
+  // (minTickGap) und merkt nicht, wenn zwei verschiedene Tage auf denselben Monat abbilden —
+  // das ergäbe wiederholte Beschriftungen ("01 01 02 02 03 …"). Explizite Liste vermeidet das.
+  const monatsTicks = daten.filter((d) => d.md.endsWith("-01")).map((d) => d.md);
+
   return (
     <div style={{ width: "100%", height: 220 }}>
       <ResponsiveContainer>
-        <ComposedChart data={daten} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+        <ComposedChart data={daten} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <CartesianGrid stroke={theme.color.rule} vertical={false} />
           <XAxis
             dataKey="md"
-            tick={{ fontSize: 10, fill: theme.color.textFaint }}
+            ticks={monatsTicks}
+            tick={{ fontSize: theme.font.size.tick, fill: theme.color.textFaint }}
             tickLine={false}
             axisLine={{ stroke: theme.color.rule }}
-            minTickGap={40}
             tickFormatter={(md: string) => md.slice(0, 2)}
           />
           <YAxis
-            domain={[0, 100]}
-            tick={{ fontSize: 10, fill: theme.color.textFaint }}
+            domain={[0, 105]}
+            ticks={[0, 25, 50, 75, 100]}
+            tick={{ fontSize: theme.font.size.tick, fill: theme.color.textFaint }}
             tickLine={false}
             axisLine={false}
-            width={38}
+            width={44}
             unit="%"
           />
           <Area

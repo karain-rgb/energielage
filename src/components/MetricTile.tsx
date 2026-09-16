@@ -76,7 +76,14 @@ export function MetricTile({ titel, metric, einordnung, chart }: Props) {
         Stand {new Date(`${metric.sourceDate}T12:00:00`).toLocaleDateString("de-DE")} · Quelle:{" "}
         <a
           href={metric.source.url}
-          style={{ color: "inherit" }}
+          style={{
+            color: "inherit",
+            display: "inline-block",
+            // Tastenziel ≥44px: Padding vergrößert die Klickfläche, das gleich große
+            // negative Margin hält den Zeilenabstand drumherum unverändert.
+            padding: `${theme.space.md}px 0`,
+            margin: `-${theme.space.md}px 0`,
+          }}
           target="_blank"
           rel="noreferrer"
         >

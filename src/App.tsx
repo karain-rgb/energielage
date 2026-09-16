@@ -28,7 +28,7 @@ export function App() {
     >
       <h1
         style={{
-          fontSize: 22,
+          fontSize: theme.font.size.title,
           fontWeight: theme.font.weight.bold,
           letterSpacing: "-0.02em",
           borderBottom: `2px solid ${theme.color.ruleStrong}`,
