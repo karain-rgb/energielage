@@ -1109,6 +1109,7 @@ Ab hier läuft die Seite öffentlich und aktualisiert sich selbst. Das ist der P
 **Files:**
 - Create: `.github/workflows/fetch-data.yml`
 - Create: `.github/workflows/deploy.yml`
+- Modify: `package.json` (Feld `engines`)
 
 **Interfaces:**
 - Consumes: `npm run fetch`, `npm run build`
@@ -1200,7 +1201,25 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-- [ ] **Step 3: Pages aktivieren und hochladen**
+- [ ] **Step 3: Node-Vorgabe verbindlich machen**
+
+Die Workflows pinnen die CI auf Node 24. Damit dieselbe Vorgabe auch lokal gilt und nicht bloß zufällig zutrifft, in `package.json` nach `"type": "module"` ergänzen:
+
+```json
+  "engines": {
+    "node": ">=24"
+  },
+```
+
+Prüfen, dass npm die Vorgabe sieht:
+
+```bash
+node -p "require('./package.json').engines.node"
+```
+
+Expected: `>=24`
+
+- [ ] **Step 4: Pages aktivieren und hochladen**
 
 ```bash
 git add .github
@@ -1210,7 +1229,7 @@ git push -u origin main
 
 Danach auf GitHub unter Settings → Pages die Quelle auf **GitHub Actions** stellen.
 
-- [ ] **Step 4: Beide Workflows prüfen**
+- [ ] **Step 5: Beide Workflows prüfen**
 
 - Unter Actions den Workflow „Daten abrufen" von Hand auslösen. Expected: läuft durch, erzeugt entweder einen `data:`-Commit oder meldet „keine Änderung".
 - „Veröffentlichen" läuft danach automatisch. Expected: grün, und die Seite ist unter `https://<nutzer>.github.io/energielage/` erreichbar und zeigt die Gasspeicher-Kachel.
