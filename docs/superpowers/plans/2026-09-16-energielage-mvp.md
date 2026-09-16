@@ -1472,154 +1472,150 @@ git commit -m "feat: Rohölpreis und US-Ölreserve über die EIA-API"
 
 ---
 
-## Task 8: Gaspreis Europa — mit vorgeschalteter Rechteprüfung
+## Task 8: Gaspreis für Haushalte (Eurostat)
 
-Die TTF-Reihe stammt ursprünglich vom IWF und wird über FRED bezogen. Ob sie in einem öffentlichen Repo liegen darf, ist vor dem ersten Datencommit zu klären.
+**Diese Aufgabe wurde am 2026-09-16 neu gefasst.** Ursprünglich war der europäische Großhandelspreis (TTF) über FRED vorgesehen. Die vorgeschaltete Rechteprüfung hat das ausgeschlossen: Die Reihe gehört dem Internationalen Währungsfonds („Copyright © 2016, International Monetary Fund"), und die FRED-Bedingungen verlangen ausdrücklich, vor jeder über den persönlichen Gebrauch hinausgehenden Nutzung die Erlaubnis des Dateneigentümers einzuholen. Die Abbruchbedingung hat also gegriffen.
 
-**Vorbedingung:** Kostenloser Schlüssel unter https://fredaccount.stlouisfed.org/apikeys, als `FRED_KEY` ablegen.
+An ihre Stelle tritt **Eurostat**, Datensatz `nrg_pc_202` — Gaspreise für Haushaltskunden, halbjährlich, zurück bis 2007, unter **Creative Commons BY 4.0** frei verwendbar. Inhaltlich ist das der bessere Treffer: Gefragt war der Preis für Gas zum Heizen, also das, was Haushalte zahlen, nicht der Börsen-Großhandelspreis.
+
+**Kein API-Schlüssel nötig** — die Eurostat-Verbreitungs-API ist offen.
 
 **Files:**
-- Create: `scripts/sources/fred.ts`
-- Test: `scripts/sources/fred.test.ts`
+- Create: `scripts/sources/eurostat.ts`
+- Test: `scripts/sources/eurostat.test.ts`
+- Create: `scripts/sources/__fixtures__/eurostat-gas-de.json`
+- Modify: `src/types.ts` (Cadence um `"biannual"` erweitern)
+- Modify: `scripts/lib/context.ts` (`findYearAgo` behandelt `biannual` wie `monthly`)
 - Modify: `scripts/build-metrics.ts`
-- Modify: `.github/workflows/fetch-data.yml`
-- Modify: `docs/superpowers/specs/2026-09-16-energielage-design.md` (offenen Punkt auflösen)
+- Modify: `docs/superpowers/specs/2026-09-16-energielage-design.md`
 
 **Interfaces:**
-- Consumes: `getJson`, `buildPreisMetric`
-- Produces: `parseFred(raw: unknown): SeriesPoint[]`, `fetchFred(apiKey: string, seriesId: string): Promise<SeriesPoint[]>`
+- Consumes: `getJson`, `buildPreisMetric`, `SeriesPoint`
+- Produces: `parseEurostat(raw: unknown): SeriesPoint[]`, `fetchGasHaushalt(): Promise<SeriesPoint[]>`
 
-- [ ] **Step 1: Rechtelage klären — Abbruchpunkt**
+- [ ] **Step 1: Die echte Antwort untersuchen, nicht raten**
 
-Die Nutzungsbedingungen der FRED-API und den Quellenhinweis der konkreten Reihe (`PNGASEUUSDM`) lesen:
+Eurostat liefert JSON-stat 2.0 — kein Array von Datensätzen, sondern ein Objekt `value`, dessen Schlüssel flache Indizes sind, plus `dimension`, das Indizes auf Kategorien abbildet. Ohne die echte Antwort ist kein Parser zu schreiben.
+
+Abfrage zusammenstellen und ansehen (Filterwerte sind Annahmen und in diesem Schritt zu überprüfen):
 
 ```bash
-open "https://fred.stlouisfed.org/series/PNGASEUUSDM"
-open "https://fred.stlouisfed.org/docs/api/terms_of_use.html"
+curl -s "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nrg_pc_202?format=JSON&geo=DE&lang=EN" \
+  | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log('Dimensionen:',JSON.stringify(Object.keys(j.dimension)));for(const k of Object.keys(j.dimension)){const c=j.dimension[k].category;console.log(k,'->',JSON.stringify(Object.keys(c.index||{}).slice(0,12)));}console.log('Werte gesamt:',Object.keys(j.value||{}).length);})"
 ```
 
-Zu beantworten ist genau eine Frage: **Dürfen die abgerufenen Werte in einem öffentlichen Repo gespeichert und auf einer öffentlichen Seite angezeigt werden?**
+Zu notieren: die Namen aller Dimensionen, die verfügbaren Codes je Dimension, und wie `value` indiziert ist.
 
-- Ja → mit Schritt 2 weitermachen.
-- Nein oder unklar → diesen Task abbrechen, die Gaspreis-Kachel entfällt im MVP. Den offenen Punkt in der Spezifikation entsprechend auflösen und mit Task 9 weitermachen. Keine Daten committen, solange das ungeklärt ist.
+**Zu treffende Auswahl, an den echten Codes zu prüfen:**
+- Verbrauchsband: das mittlere Haushaltsband (20–200 GJ, üblicherweise `D2`) — der typische Einfamilienhaushalt
+- Steuerstand: **alle Steuern und Abgaben enthalten** (üblicherweise `I_TAX`), denn gefragt ist, was Haushalte tatsächlich zahlen
+- Währung: Euro
+- Einheit: die Energieeinheit, die Eurostat anbietet (GJ oder kWh) — die tatsächliche übernehmen, nicht umrechnen
 
-- [ ] **Step 2: Den fehlschlagenden Test schreiben**
+Weicht etwas von diesen Annahmen ab, gilt die echte API. Im Bericht festhalten, welche Codes gewählt wurden und warum.
 
-`scripts/sources/fred.test.ts`:
+- [ ] **Step 2: Fixture aus der echten Antwort ableiten**
+
+Einen kleinen, **echten** Ausschnitt als `scripts/sources/__fixtures__/eurostat-gas-de.json` speichern: die `dimension`- und `value`-Struktur mit etwa vier Zeitpunkten. Keine erfundene Struktur — der Parser muss gegen die Wirklichkeit getestet werden.
+
+- [ ] **Step 3: Den fehlschlagenden Test schreiben**
+
+`scripts/sources/eurostat.test.ts` — Erwartungen an die Werte des echten Fixtures anpassen:
 
 ```ts
 import { describe, it, expect } from "vitest";
-import { parseFred } from "./fred";
+import { parseEurostat } from "./eurostat";
+import roh from "./__fixtures__/eurostat-gas-de.json";
 
-const antwort = {
-  observations: [
-    { date: "2026-07-01", value: "32.10" },
-    { date: "2026-08-01", value: "34.50" },
-    { date: "2026-09-01", value: "." },
-  ],
-};
-
-describe("parseFred", () => {
-  it("liest Datum und Wert", () => {
-    expect(parseFred(antwort)).toEqual([
-      { d: "2026-07-01", v: 32.1 },
-      { d: "2026-08-01", v: 34.5 },
-    ]);
+describe("parseEurostat", () => {
+  it("bildet Halbjahres-Kennungen auf den ersten Tag des Halbjahres ab", () => {
+    const punkte = parseEurostat(roh);
+    expect(punkte.every((p) => /^\d{4}-(01|07)-01$/.test(p.d))).toBe(true);
   });
 
-  it("verwirft den Platzhalter für fehlende Werte", () => {
-    expect(parseFred(antwort)).toHaveLength(2);
+  it("liefert aufsteigend sortierte, endliche Werte", () => {
+    const punkte = parseEurostat(roh);
+    expect(punkte.length).toBeGreaterThan(0);
+    expect(punkte.every((p) => Number.isFinite(p.v))).toBe(true);
+    expect([...punkte].sort((a, b) => a.d.localeCompare(b.d))).toEqual(punkte);
+  });
+
+  it("verwirft Zeitpunkte ohne Wert", () => {
+    const luecke = JSON.parse(JSON.stringify(roh));
+    const ersterSchluessel = Object.keys(luecke.value)[0];
+    delete luecke.value[ersterSchluessel];
+    expect(parseEurostat(luecke).length).toBe(parseEurostat(roh).length - 1);
   });
 
   it("liefert eine leere Liste bei unerwarteter Antwortform", () => {
-    expect(parseFred({ fehler: "kaputt" })).toEqual([]);
+    expect(parseEurostat({ kaputt: true })).toEqual([]);
   });
 });
 ```
 
-- [ ] **Step 3: Test ausführen und Fehlschlag bestätigen**
+- [ ] **Step 4: Test ausführen und Fehlschlag bestätigen**
 
-Run: `npx vitest run scripts/sources/fred.test.ts`
+Run: `npx vitest run scripts/sources/eurostat.test.ts`
 Expected: FAIL — Modul nicht gefunden
 
-- [ ] **Step 4: Implementierung schreiben**
+- [ ] **Step 5: Parser und Abruf schreiben**
 
-`scripts/sources/fred.ts`:
+`scripts/sources/eurostat.ts`. Kern ist die Übersetzung der Halbjahres-Kennung in ein ISO-Datum: Eurostat schreibt Zeitpunkte als `2024-S1` bzw. `2024S1`. Abgebildet wird auf den **Beginn** des Halbjahres, damit die Reihe wie alle anderen nach ISO-Datum sortierbar bleibt:
 
 ```ts
-import { getJson } from "../lib/http";
-import type { SeriesPoint } from "../../src/types";
-
-export function parseFred(raw: unknown): SeriesPoint[] {
-  const obs = (raw as { observations?: unknown })?.observations;
-  if (!Array.isArray(obs)) return [];
-
-  const points: SeriesPoint[] = [];
-  for (const row of obs) {
-    const d = (row as { date?: unknown }).date;
-    // FRED schreibt "." für fehlende Beobachtungen.
-    const v = Number((row as { value?: unknown }).value);
-    if (typeof d === "string" && Number.isFinite(v)) {
-      points.push({ d, v });
-    }
-  }
-  return points.sort((a, b) => a.d.localeCompare(b.d));
-}
-
-export async function fetchFred(
-  apiKey: string,
-  seriesId: string
-): Promise<SeriesPoint[]> {
-  const url =
-    `https://api.stlouisfed.org/fred/series/observations` +
-    `?series_id=${seriesId}&api_key=${apiKey}&file_type=json` +
-    `&observation_start=2015-01-01`;
-  return parseFred(await getJson(url));
+// Eurostat führt Halbjahre als "2024-S1"/"2024-S2". Abgebildet auf den ersten
+// Tag des Halbjahres, damit die Reihe dieselbe ISO-Form hat wie alle anderen.
+export function halbjahrZuDatum(kennung: string): string | null {
+  const m = /^(\d{4})-?S([12])$/.exec(kennung.trim());
+  if (!m) return null;
+  return `${m[1]}-${m[2] === "1" ? "01" : "07"}-01`;
 }
 ```
 
-- [ ] **Step 5: Test ausführen und Erfolg bestätigen**
+`parseEurostat` liest `dimension.time.category.index` (Kennung → Position) und `value` (Position → Zahl), verwirft alles ohne endlichen Wert und sortiert aufsteigend. Defensiv gegen `unknown` wie die übrigen Parser.
+
+`fetchGasHaushalt` baut die in Schritt 1 bestätigte Abfrage und ruft `getJson` auf. Kein Schlüssel, keine Kopfzeilen.
+
+- [ ] **Step 6: Test ausführen und Erfolg bestätigen**
 
 Run: `npx vitest run`
-Expected: PASS — 19 Tests insgesamt
+Expected: PASS
 
-- [ ] **Step 6: Kennzahl ergänzen**
+- [ ] **Step 7: `Cadence` um `biannual` erweitern**
 
-In `scripts/build-metrics.ts` in `main()`:
+In `src/types.ts`:
 
 ```ts
-  const fredKey = process.env.FRED_KEY;
-  if (!fredKey) throw new Error("FRED_KEY fehlt");
-
-  await schreibe(
-    buildPreisMetric(
-      "gas-ttf",
-      "USD/MMBtu",
-      "monthly",
-      { name: "IWF über FRED", url: "https://fred.stlouisfed.org/series/PNGASEUUSDM" },
-      await fetchFred(fredKey, "PNGASEUUSDM"),
-      fetchedAt
-    )
-  );
+export type Cadence = "daily" | "weekly" | "monthly" | "biannual";
 ```
 
-Die Einheit ist an der echten Antwort zu prüfen und gegebenenfalls zu korrigieren — die IWF-Reihe wird in US-Dollar je MMBtu geführt, nicht in Euro je MWh wie in der Spezifikation angenommen. Weicht es ab, die Einheit hier und in der Spezifikation angleichen.
+In `scripts/lib/context.ts` behandelt `findYearAgo` `biannual` genau wie `monthly` — der Vorjahresvergleich sucht denselben Monat des Vorjahres, und da Halbjahre stets auf Januar oder Juli fallen, trifft das genau das gleiche Halbjahr:
 
-- [ ] **Step 7: Schlüssel im Workflow ergänzen**
-
-```yaml
-          FRED_KEY: ${{ secrets.FRED_KEY }}
+```ts
+  if (cadence === "monthly" || cadence === "biannual") {
 ```
 
-- [ ] **Step 8: Committen**
+Einen Test in `scripts/lib/context.test.ts` ergänzen, der das für eine Halbjahresreihe belegt.
+
+- [ ] **Step 8: Kennzahl ergänzen**
+
+In `scripts/build-metrics.ts` eine Quelle `gas-haushalt-de` anlegen und in `QUELLEN` eintragen — Einheit und Quellenangabe aus Schritt 1:
+
+```ts
+      { name: "Eurostat (nrg_pc_202)", url: "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_202/default/table" }
+```
+
+- [ ] **Step 9: Lizenzhinweis in der Spezifikation**
+
+Eurostat verlangt für CC BY 4.0 eine Quellenangabe. In der Spezifikation festhalten, dass die Fußzeile der Seite Eurostat als Quelle nennen muss und dass keine Änderung an den Werten vorgenommen wird. Den offenen Punkt zur FRED-Rechtelage in Abschnitt 10 auflösen: geklärt, negativ beschieden, ersetzt.
+
+- [ ] **Step 10: Committen**
 
 ```bash
-set -a && source .env && set +a && npm run fetch
-git add scripts data/metrics .github docs
-git commit -m "feat: europäischer Gaspreis über FRED, Rechtelage geklärt"
+npm run fetch
+git add scripts src data/metrics docs
+git commit -m "feat: Gaspreis für Haushalte über Eurostat statt TTF über FRED"
 ```
-
----
 
 ## Task 9: Benzin, Diesel und Heizöl aus dem EU Oil Bulletin
 

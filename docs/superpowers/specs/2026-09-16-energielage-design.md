@@ -57,7 +57,7 @@ Zugangsweg geprüft.
 | Rohöl Brent / WTI | EIA API v2 | JSON-API, freier Key | börsentäglich | Jahrzehnte |
 | US-Ölreserve (SPR) | EIA API v2 | JSON-API, freier Key | wöchentlich | Jahrzehnte |
 | Benzin, Diesel, Heizöl DE | EU Weekly Oil Bulletin | xlsx-Download | wöchentlich (Do) | seit 2005 |
-| Gaspreis Europa (TTF) | FRED (IMF-Reihe) | JSON-API, freier Key | monatlich | seit 1992 |
+| Gaspreis für Haushalte DE | Eurostat `nrg_pc_202` | JSON-API, **ohne Schlüssel** | halbjährlich | seit 2007 |
 
 ### Anmerkungen
 
@@ -65,10 +65,21 @@ Zugangsweg geprüft.
   Preise wahlweise mit und ohne Steuern. Daraus ergibt sich der Steueranteil beim
   Sprit praktisch geschenkt — erfahrungsgemäß die meistdiskutierte Zahl überhaupt.
   Tankerkönig/MTS-K wird dadurch nicht benötigt; dessen Lizenzfrage entfällt.
-- **Tagesaktuelle TTF-Kurse sind lizenzpflichtig** (ICE, EEX). Frei verfügbar ist
-  nur die IMF-Monatsreihe über FRED. Für die Verlaufsdarstellung ausreichend,
-  für einen tagesaktuellen Gas-Ticker nicht. Das ist eine Datenmarktgrenze, keine
-  technische Lücke.
+- **Beim Gaspreis gibt es keinen frei verwendbaren aktuellen Kurs.** Tagesaktuelle
+  TTF-Kurse gehören ICE und EEX und sind lizenzpflichtig. Die ursprünglich
+  vorgesehene IWF-Monatsreihe über FRED wurde am 2026-09-16 geprüft und
+  **verworfen**: Sie trägt „Copyright © 2016, International Monetary Fund", und
+  die FRED-Bedingungen verlangen, vor jeder über den persönlichen Gebrauch
+  hinausgehenden Nutzung die Erlaubnis des Dateneigentümers einzuholen. Eine
+  öffentliche Seite ist kein persönlicher Gebrauch.
+  Stattdessen **Eurostat `nrg_pc_202`**: was Haushalte fürs Heizen tatsächlich
+  zahlen, einschließlich Steuern und Abgaben, zurück bis 2007, unter
+  **Creative Commons BY 4.0** frei verwendbar. Inhaltlich näher an der
+  ursprünglichen Frage als der Börsenkurs es gewesen wäre — der Preis für
+  Heizgas, nicht der Großhandelspreis. Preis dafür ist die Frequenz: nur
+  halbjährlich. Die Kachel muss ihren Stand deshalb besonders deutlich ausweisen.
+  **Lizenzauflage:** Die Fußzeile nennt Eurostat als Quelle; die Werte werden
+  unverändert übernommen.
 - **Ein täglicher Abruf genügt für alle Kennzahlen.** Die schnellste Quelle
   (Gasspeicher) aktualisiert täglich, alle übrigen wöchentlich oder monatlich.
 - **AGSI+ liefert alle EU-Länder mit**, das MVP zeigt jedoch nur Deutschland.
@@ -331,10 +342,10 @@ veralteten Wert als aktuell zu zeigen.
 
 ## 10. Offene Punkte
 
-- **FRED/IMF-Weiterverbreitung prüfen**, bevor die TTF-Reihe im öffentlichen Repo
-  landet. Die zugrundeliegende Reihe stammt vom IWF; die Bedingungen müssen vor
-  dem ersten Commit der Daten geklärt sein. Fällt das weg, entfällt die
-  Gaspreis-Kachel im MVP.
+- ~~FRED/IMF-Weiterverbreitung prüfen~~ — **erledigt am 2026-09-16, negativ
+  beschieden.** Die Reihe ist IWF-urheberrechtlich geschützt und hätte eine
+  Einzelerlaubnis erfordert. Ersetzt durch Eurostat, siehe Abschnitt 3. Es wurden
+  zu keinem Zeitpunkt IWF-Daten in das Repo übernommen.
 - **xlsx-Bibliothek wählen** für das Oil Bulletin (SheetJS vs. exceljs) —
   Lizenz und Bezugsweg beim Bau prüfen.
 - **Tabellenziffern in Sora prüfen** und bei Bedarf einen der beiden in
