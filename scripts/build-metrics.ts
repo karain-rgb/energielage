@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { fetchAgsi } from "./sources/agsi";
 import { seasonalCorridor } from "./lib/context";
+import { fuerAnzeige } from "./lib/series";
 import type { Metric, SeriesPoint } from "../src/types";
 
 export function buildGasStorage(
@@ -21,7 +22,7 @@ export function buildGasStorage(
       url: "https://agsi.gie.eu/",
     },
     current: last.v,
-    series,
+    series: fuerAnzeige(series, last.d),
     context: seasonalCorridor(series, last.d),
   };
 }
