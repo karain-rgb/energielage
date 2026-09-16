@@ -19,7 +19,7 @@
 - **Trefferflächen:** mindestens 44 × 44 px.
 - **Datumsformat in allen Daten:** ISO `YYYY-MM-DD`.
 - **Zwei Zeitangaben pro Kennzahl:** `fetchedAt` (wann abgerufen) und `sourceDate` (worauf sich der Wert bezieht) sind immer getrennt zu führen.
-- **Node-Version:** 20.
+- **Node-Version:** 24 — gleiche Fassung lokal und in der CI (siehe Ruling 5 im Ledger).
 - **Keine API-Schlüssel im Repo.** Alle Schlüssel kommen aus GitHub Secrets bzw. lokal aus `.env` (ist bereits in `.gitignore`).
 
 ## Abweichung von der Spezifikation
@@ -1136,7 +1136,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
       - run: npm ci
       - run: npm run fetch
@@ -1180,7 +1180,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
       - run: npm ci
       - run: npm test
