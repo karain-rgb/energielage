@@ -28,4 +28,34 @@ describe("buildGasStorage", () => {
       expect(m.context.typicalNow).toBe(80);
     }
   });
+
+  // Schutz gegen eine Regression, die auf der kurzen Fixture oben unsichtbar
+  // bliebe: 2021-09-15 (Mi) und 2021-09-17 (Fr derselben ISO-Woche) landen im
+  // selben Wochen-Bucket, fuerAnzeige behält den späteren — der 09-15-Wert von
+  // 2021 fehlt in der verdünnten Serie. Voller Korridor für 09-15 (2019–2025):
+  // [60,70,80,90,100,50,40] → Median 70. Verdünnt fehlt 2021 (80) →
+  // [60,70,90,100,50,40] → Median 65. Bitte diese Fixture NICHT vereinfachen —
+  // eine kürzere Reihe ohne Wochenkollision entwaffnet den Test wieder.
+  it("berechnet current/sourceDate/context aus der vollen Reihe, nicht aus der verdünnten", () => {
+    const langeReihe: SeriesPoint[] = [
+      { d: "2019-09-15", v: 60 },
+      { d: "2020-09-15", v: 70 },
+      { d: "2021-09-15", v: 80 },
+      { d: "2021-09-17", v: 81 },
+      { d: "2022-09-15", v: 90 },
+      { d: "2023-09-15", v: 100 },
+      { d: "2024-09-15", v: 50 },
+      { d: "2025-09-15", v: 40 },
+      { d: "2026-09-15", v: 68.4 },
+    ];
+
+    const m = buildGasStorage(langeReihe, "2026-09-16T04:07:00Z");
+
+    expect(m.current).toBe(68.4);
+    expect(m.sourceDate).toBe("2026-09-15");
+    expect(m.context.kind).toBe("seasonal-corridor");
+    if (m.context.kind === "seasonal-corridor") {
+      expect(m.context.typicalNow).toBe(70);
+    }
+  });
 });
