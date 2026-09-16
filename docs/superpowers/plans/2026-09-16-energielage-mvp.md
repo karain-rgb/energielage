@@ -1620,20 +1620,28 @@ Die aufwendigste Quelle: eine xlsx-Datei statt einer API. Der Aufbau der Datei w
 npm i -D exceljs
 ```
 
-Aktuelle Datei von https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en herunterladen (die Preisdatei **mit** Steuern) und den Aufbau ausgeben:
+Aktuelle Datei von https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en herunterladen (die Preisdatei **mit** Steuern) und den Aufbau ausgeben.
 
-```bash
-npx tsx -e "
-import ExcelJS from 'exceljs';
+Das Untersuchungsskript kommt in eine Datei **außerhalb des Repos**, nicht als `tsx -e`-Einzeiler: `tsx` übersetzt `-e`-Code nach CommonJS, worin `await` auf oberster Ebene nicht erlaubt ist (in Task 3 bereits aufgetreten). Also `/tmp/inspect-bulletin.ts` anlegen:
+
+```ts
+import ExcelJS from "exceljs";
+
 const wb = new ExcelJS.Workbook();
-await wb.xlsx.readFile('/tmp/oil-bulletin.xlsx');
-wb.eachSheet(s => {
-  console.log('--- Blatt:', s.name, '| Zeilen:', s.rowCount);
+await wb.xlsx.readFile("/tmp/oil-bulletin.xlsx");
+wb.eachSheet((s) => {
+  console.log("--- Blatt:", s.name, "| Zeilen:", s.rowCount);
   for (let i = 1; i <= Math.min(12, s.rowCount); i++) {
     console.log(i, JSON.stringify(s.getRow(i).values));
   }
 });
-"
+```
+
+Dann ausführen und danach löschen:
+
+```bash
+npx tsx /tmp/inspect-bulletin.ts
+rm /tmp/inspect-bulletin.ts
 ```
 
 Notieren: Name des relevanten Blatts, Zeile mit den Spaltenüberschriften, Spalte mit dem Datum, Spalten für Euro-Super 95, Diesel und Heizöl, sowie die Zeilen für Deutschland. **Erst danach** weiterarbeiten — die folgenden Schritte setzen diese Erkenntnisse ein.
