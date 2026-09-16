@@ -10,6 +10,7 @@
     "fetch": "tsx scripts/build-metrics.ts"
   },
   "dependencies": {
+    "@fontsource-variable/sora": "^5.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "recharts": "^3.10.1"
