@@ -23,7 +23,7 @@ function findYearAgo(points: SeriesPoint[], cadence: Cadence): number | null {
   const last = points[points.length - 1];
   if (!last) return null;
 
-  if (cadence === "monthly") {
+  if (cadence === "monthly" || cadence === "biannual") {
     const target = `${Number(last.d.slice(0, 4)) - 1}-${last.d.slice(5, 7)}`;
     const hit = points.find((p) => p.d.startsWith(target));
     return hit ? hit.v : null;

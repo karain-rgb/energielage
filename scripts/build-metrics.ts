@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fetchAgsi } from "./sources/agsi";
 import { fetchEiaSeries } from "./sources/eia";
+import { fetchGasHaushalt } from "./sources/eurostat";
 import { seasonalCorridor, referencePoints } from "./lib/context";
 import { fuerAnzeige } from "./lib/series";
 import type { Cadence, Metric, SeriesPoint } from "../src/types";
@@ -11,6 +12,10 @@ const EIA_QUELLE = {
 };
 const BRENT_ID = "RBRTE";
 const SPR_ID = "WCSSTUS1";
+const EUROSTAT_QUELLE = {
+  name: "Eurostat (nrg_pc_202)",
+  url: "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_202/default/table",
+};
 
 export function buildGasStorage(
   series: SeriesPoint[],
@@ -120,10 +125,23 @@ async function holeSpr(fetchedAt: string): Promise<Metric> {
   return buildPreisMetric("us-spr", "Tsd. Barrel", "weekly", EIA_QUELLE, series, fetchedAt);
 }
 
+async function holeGasHaushalt(fetchedAt: string): Promise<Metric> {
+  const series = await fetchGasHaushalt();
+  return buildPreisMetric(
+    "gas-haushalt-de",
+    "EUR/kWh",
+    "biannual",
+    EUROSTAT_QUELLE,
+    series,
+    fetchedAt
+  );
+}
+
 const QUELLEN: Quelle[] = [
   { id: "gas-storage-de", hole: holeGasStorage },
   { id: "brent", hole: holeBrent },
   { id: "us-spr", hole: holeSpr },
+  { id: "gas-haushalt-de", hole: holeGasHaushalt },
 ];
 
 // Jede Quelle läuft isoliert: Fällt eine aus (AGSI hatte bereits zweimal einen

@@ -1,4 +1,4 @@
-export type Cadence = "daily" | "weekly" | "monthly";
+export type Cadence = "daily" | "weekly" | "monthly" | "biannual";
 
 export interface SeriesPoint {
   d: string;

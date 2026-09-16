@@ -30,6 +30,28 @@ describe("referencePoints", () => {
     expect(ctx.yearAgo).toEqual({ value: 40, deltaPct: 25 });
   });
 
+  it("behandelt Halbjahresreihen wie Monatsreihen: kein Ausweichen auf den nächstgelegenen Tag aus dem falschen Halbjahr", () => {
+    const biannual: SeriesPoint[] = [
+      // Nur 16 Tage vom Vorjahresziel (2025-07-01) entfernt — läge innerhalb
+      // der 60-Tage-Toleranz von Tages-/Wochenreihen, gehört aber zum
+      // falschen Halbjahr (2025-06 statt 2025-07).
+      { d: "2025-06-15", v: 999 },
+      { d: "2026-07-01", v: 120 },
+    ];
+    const ctx = referencePoints(biannual, "biannual");
+    expect(ctx.yearAgo).toBeNull();
+  });
+
+  it("nimmt bei Halbjahresreihen dasselbe Halbjahr des Vorjahres", () => {
+    const biannual: SeriesPoint[] = [
+      { d: "2025-07-01", v: 100 },
+      { d: "2026-01-01", v: 110 },
+      { d: "2026-07-01", v: 120 },
+    ];
+    const ctx = referencePoints(biannual, "biannual");
+    expect(ctx.yearAgo).toEqual({ value: 100, deltaPct: 20 });
+  });
+
   it("liefert null, wenn ein Bezugszeitraum keine Daten hat", () => {
     const ctx = referencePoints([{ d: "2026-09-12", v: 1.8 }], "weekly");
     expect(ctx.preCrisis).toBeNull();

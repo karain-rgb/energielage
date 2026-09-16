@@ -101,7 +101,7 @@ Der fachliche Kern. Zwei Verfahren, je nach Art der Kennzahl.
 
 ### 4.1 Preise — drei feste Referenzpunkte
 
-Für Brent, TTF, Benzin, Diesel und Heizöl:
+Für Brent, Gaspreis Haushalte, Benzin, Diesel und Heizöl:
 
 | Referenz | Definition |
 |---|---|
@@ -115,9 +115,10 @@ auf ganze Prozent. Ergebnis pro Kachel:
 > **Diesel 1,72 €/l** — +4 % gegenüber Vorjahr, +21 % über Vorkrisenniveau,
 > −28 % unter dem Höchststand 2022
 
-**Granularität beachten:** Bei monatlichen Reihen (TTF) bedeutet "Vorjahr" den
-gleichen Kalendermonat des Vorjahres, nicht den Tag. Die Vergleichsfunktion muss
-die Auflösung der jeweiligen Reihe respektieren.
+**Granularität beachten:** Bei monatlichen und halbjährlichen Reihen (Gaspreis
+Haushalte) bedeutet "Vorjahr" den gleichen Kalendermonat bzw. dasselbe Halbjahr
+des Vorjahres, nicht den Tag. Die Vergleichsfunktion muss die Auflösung der
+jeweiligen Reihe respektieren.
 
 ### 4.2 Gasspeicher — Zehn-Jahres-Korridor
 
@@ -206,7 +207,7 @@ energielage/
 │   │   ├── agsi.ts             # Gasspeicher
 │   │   ├── eia.ts              # Brent, WTI, SPR
 │   │   ├── oil-bulletin.ts     # Benzin, Diesel, Heizöl (xlsx)
-│   │   └── fred.ts             # TTF
+│   │   └── eurostat.ts         # Gaspreis Haushalte
 │   ├── lib/
 │   │   ├── context.ts          # Einordnungs-Berechnung (Abschnitt 4)
 │   │   └── context.test.ts
@@ -319,13 +320,13 @@ Die Seite muss auf dem Telefon genauso funktionieren wie am Rechner. Konkret:
 | Benzin & Diesel | €/Liter | Drei Referenzpunkte + Steueranteil |
 | Heizöl | €/100 l | Drei Referenzpunkte |
 | Rohöl Brent | $/Barrel | Drei Referenzpunkte |
-| Gaspreis Europa | €/MWh | Drei Referenzpunkte (monatlich) |
+| Gaspreis Haushalte DE | EUR/kWh | Drei Referenzpunkte (halbjährlich) |
 | US-Ölreserve | Mio. Barrel + % | Verlauf seit 2020 |
 
 **Jede Kachel trägt ihr eigenes Stand-Datum.** Der Gasspeicher ist von gestern,
-der Spritpreis von letztem Donnerstag, der TTF-Wert vom Monatswechsel. Eine
-Seite, die alles gleich frisch aussehen lässt, verliert genau die
-Glaubwürdigkeit, für die sie gebaut wird.
+der Spritpreis von letztem Donnerstag, der Gaspreis Haushalte vom letzten
+Halbjahreswechsel. Eine Seite, die alles gleich frisch aussehen lässt, verliert
+genau die Glaubwürdigkeit, für die sie gebaut wird.
 
 **Frische-Warnung:** Überschreitet `sourceDate` das für die jeweilige Frequenz
 erwartete Alter deutlich, weist die Kachel sichtbar darauf hin, statt einen
