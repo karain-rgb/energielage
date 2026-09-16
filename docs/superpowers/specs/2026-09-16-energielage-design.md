@@ -107,13 +107,32 @@ Für Brent, Gaspreis Haushalte, Benzin, Diesel und Heizöl:
 |---|---|
 | **Vorjahr** | Wert am nächstgelegenen Datenpunkt vor 365 Tagen |
 | **Vorkrise** | Arithmetisches Mittel aller Werte 2019-01-01 bis 2021-12-31 |
-| **Höchststand 2022** | Maximum im Zeitraum 2022-01-01 bis 2022-12-31 |
+| **Krisen-Höchststand** | Maximum ab 2022-01-01 **ohne Enddatum**, mitsamt dem Datum, an dem es auftrat |
 
 Ausgegeben wird jeweils die prozentuale Abweichung des aktuellen Werts, gerundet
 auf ganze Prozent. Ergebnis pro Kachel:
 
 > **Diesel 1,72 €/l** — +4 % gegenüber Vorjahr, +21 % über Vorkrisenniveau,
-> −28 % unter dem Höchststand 2022
+> −28 % unter dem Höchststand vom März 2022
+
+**Warum kein festes Jahr (Korrektur vom 2026-09-16).** Ursprünglich war dieser
+Bezugspunkt als „Maximum im Jahr 2022" definiert. Das trifft für Börsen- und
+Ölpreise zu, deren Gipfel tatsächlich 2022 lag — für Verbraucherpreise nicht:
+Haushaltsverträge ziehen mit ein bis zwei Jahren Verzug nach. Beim Gaspreis für
+Haushalte lag der Höchstwert 2024, und die Kachel hätte behauptet: „+30 % über
+dem Höchststand 2022". Rechnerisch richtig, als Aussage sinnlos — ein Wert, der
+später überboten wurde, war kein Höchststand.
+
+Das Fenster beginnt weiterhin 2022, endet aber offen. Es früher beginnen zu
+lassen wäre falsch: 2021 gehört zum Vorkrisen-Zeitraum, und derselbe Wert dürfte
+nicht zugleich als Normalzustand und als Krisengipfel zählen. Ein völlig
+unbegrenztes Maximum wäre ebenfalls falsch — bei Brent käme dann der Gipfel von
+2008 heraus, der mit dieser Krise nichts zu tun hat.
+
+Weil der Gipfel nun je Kennzahl auf einem anderen Datum liegt, wird dieses Datum
+**mitgeführt und angezeigt**. Das ist zugleich die informativere Auskunft: Der
+Leser erfährt nicht nur, wie weit es heute darunter liegt, sondern wann es am
+schlimmsten war.
 
 **Granularität beachten:** Bei monatlichen und halbjährlichen Reihen (Gaspreis
 Haushalte) bedeutet "Vorjahr" den gleichen Kalendermonat bzw. dasselbe Halbjahr
@@ -240,9 +259,9 @@ spezifischer `context`:
   "series": [ { "d": "2026-09-11", "v": 1.72 } ],
   "context": {
     "kind": "reference-points",
-    "yearAgo":   { "value": 1.65, "deltaPct":   4 },
-    "preCrisis": { "value": 1.42, "deltaPct":  21 },
-    "peak2022":  { "value": 2.38, "deltaPct": -28 },
+    "yearAgo":    { "value": 1.65, "deltaPct":   4 },
+    "preCrisis":  { "value": 1.42, "deltaPct":  21 },
+    "crisisPeak": { "value": 2.38, "deltaPct": -28, "date": "2022-03-13" },
     "taxShare": 0.47
   }
 }

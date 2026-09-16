@@ -1912,7 +1912,7 @@ import diesel from "../data/metrics/diesel-de.json";
 import heizoel from "../data/metrics/heizoel-de.json";
 import brent from "../data/metrics/brent.json";
 import spr from "../data/metrics/us-spr.json";
-import gasTtf from "../data/metrics/gas-ttf.json";
+import gasHaushalt from "../data/metrics/gas-haushalt-de.json";
 
 export interface MetrikBeschreibung {
   metric: Metric;
@@ -1925,7 +1925,7 @@ export const ALLE_METRIKEN: MetrikBeschreibung[] = [
   { metric: diesel as Metric, titelKey: "diesel" },
   { metric: heizoel as Metric, titelKey: "heizoel" },
   { metric: brent as Metric, titelKey: "brent" },
-  { metric: gasTtf as Metric, titelKey: "gasTtf" },
+  { metric: gasHaushalt as Metric, titelKey: "gasHaushalt" },
   { metric: spr as Metric, titelKey: "spr" },
 ];
 ```
@@ -1934,7 +1934,7 @@ export const ALLE_METRIKEN: MetrikBeschreibung[] = [
 
 Die Spezifikation fasst Benzin und Diesel in einer Kachel zusammen; hier bekommt jedes seine eigene. Grund: Beide sind eigenständige Reihen mit eigener Einordnung, und eine Kachel mit zwei Werten und zwei Referenzpunkt-Sätzen wird unleserlich. Damit sind es sieben Kacheln statt sechs.
 
-Entfiel die Gaspreis-Kachel in Task 8 wegen ungeklärter Rechtelage, entfallen hier Import und Eintrag `gasTtf` — dann sind es sechs.
+Der Gaspreis kommt seit der Neufassung von Task 8 von Eurostat (Haushaltspreise, halbjährlich), nicht mehr als TTF-Börsenkurs — Kennung `gas-haushalt-de`.
 
 - [ ] **Step 3: Kachel um Aufklappen erweitern**
 
@@ -1997,7 +1997,7 @@ function einordnungText(metric: Metric): string {
   const teile: string[] = [];
   if (ctx.yearAgo) teile.push(`${vorzeichen(ctx.yearAgo.deltaPct)} gegenüber Vorjahr`);
   if (ctx.preCrisis) teile.push(`${vorzeichen(ctx.preCrisis.deltaPct)} zum Vorkrisenniveau`);
-  if (ctx.peak2022) teile.push(`${vorzeichen(ctx.peak2022.deltaPct)} zum Höchststand 2022`);
+  if (ctx.crisisPeak) teile.push(`${vorzeichen(ctx.crisisPeak.deltaPct)} zum Höchststand vom ${monatJahr(ctx.crisisPeak.date)}`);
   return teile.length ? teile.join(", ") : "Keine Vergleichswerte verfügbar";
 }
 
@@ -2013,7 +2013,7 @@ const LABELS: Record<string, string> = {
   diesel: "Diesel",
   heizoel: "Heizöl",
   brent: "Rohöl Brent",
-  gasTtf: "Gaspreis Europa",
+  gasHaushalt: "Gaspreis für Haushalte",
   spr: "US-Ölreserve",
 };
 
@@ -2119,7 +2119,7 @@ function metrik(cadence: Metric["cadence"], sourceDate: string): Metric {
   return {
     id: "test", unit: "%", fetchedAt: "2026-09-16T00:00:00Z",
     sourceDate, cadence, source: { name: "", url: "" },
-    current: 1, series: [], context: { kind: "reference-points", yearAgo: null, preCrisis: null, peak2022: null },
+    current: 1, series: [], context: { kind: "reference-points", yearAgo: null, preCrisis: null, crisisPeak: null },
   };
 }
 
@@ -2168,7 +2168,7 @@ const TEXTE: Record<string, Record<Sprache, string>> = {
   heizoel: { de: "Heizöl", en: "Heating oil" },
   brent: { de: "Rohöl Brent", en: "Brent crude" },
   spr: { de: "US-Ölreserve", en: "US Strategic Petroleum Reserve" },
-  gasTtf: { de: "Gaspreis Europa", en: "European gas price" },
+  gasHaushalt: { de: "Gaspreis für Haushalte", en: "Household gas price" },
   stand: { de: "Stand", en: "As of" },
   quelle: { de: "Quelle", en: "Source" },
   veraltet: {
