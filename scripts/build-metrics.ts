@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fetchAgsi } from "./sources/agsi";
 import { seasonalCorridor } from "./lib/context";
 import { fuerAnzeige } from "./lib/series";
@@ -27,13 +27,34 @@ export function buildGasStorage(
   };
 }
 
+// Vergleicht zwei Kennzahl-Dateien ohne den Abrufzeitpunkt. Ohne das erzeugte
+// jeder Lauf einen Commit und einen vollständigen Neubau, obwohl sich keine
+// einzige Zahl bewegt hat — und echte Datenänderungen wären in der Historie
+// nicht mehr von reinen Abruf-Läufen zu unterscheiden.
+export function gleicherInhalt(a: Metric, b: Metric): boolean {
+  const ohneZeit = ({ fetchedAt: _, ...rest }: Metric) => rest;
+  return JSON.stringify(ohneZeit(a)) === JSON.stringify(ohneZeit(b));
+}
+
+async function liesVorherige(pfad: string): Promise<Metric | null> {
+  try {
+    return JSON.parse(await readFile(pfad, "utf8")) as Metric;
+  } catch {
+    return null; // Datei fehlt (erster Lauf) oder ist kein gültiges JSON.
+  }
+}
+
 async function schreibe(metric: Metric): Promise<void> {
   await mkdir("data/metrics", { recursive: true });
-  await writeFile(
-    `data/metrics/${metric.id}.json`,
-    JSON.stringify(metric, null, 2) + "\n",
-    "utf8"
-  );
+  const pfad = `data/metrics/${metric.id}.json`;
+
+  const vorherige = await liesVorherige(pfad);
+  if (vorherige && gleicherInhalt(vorherige, metric)) {
+    console.log(`${metric.id}: unverändert (${metric.sourceDate})`);
+    return;
+  }
+
+  await writeFile(pfad, JSON.stringify(metric, null, 2) + "\n", "utf8");
   console.log(`${metric.id}: ${metric.current} ${metric.unit} (${metric.sourceDate})`);
 }
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildGasStorage } from "./build-metrics";
-import type { SeriesPoint } from "../src/types";
+import { buildGasStorage, gleicherInhalt } from "./build-metrics";
+import type { Metric, SeriesPoint } from "../src/types";
 
 const series: SeriesPoint[] = [
   { d: "2024-09-15", v: 70 },
@@ -57,5 +57,30 @@ describe("buildGasStorage", () => {
     if (m.context.kind === "seasonal-corridor") {
       expect(m.context.typicalNow).toBe(70);
     }
+  });
+});
+
+describe("gleicherInhalt", () => {
+  const basis = buildGasStorage(series, "2026-09-16T04:07:00Z");
+
+  it("ignoriert einen abweichenden Abrufzeitpunkt", () => {
+    const spaeter: Metric = { ...basis, fetchedAt: "2026-09-17T04:07:00Z" };
+    expect(gleicherInhalt(basis, spaeter)).toBe(true);
+  });
+
+  it("erkennt eine Änderung am aktuellen Stand", () => {
+    const anders: Metric = { ...basis, current: basis.current + 0.1 };
+    expect(gleicherInhalt(basis, anders)).toBe(false);
+  });
+
+  it("erkennt eine Änderung irgendwo im Kontext", () => {
+    if (basis.context.kind !== "seasonal-corridor") {
+      throw new Error("unerwarteter Kontext-Typ in der Fixture");
+    }
+    const anders: Metric = {
+      ...basis,
+      context: { ...basis.context, corridor: [] },
+    };
+    expect(gleicherInhalt(basis, anders)).toBe(false);
   });
 });

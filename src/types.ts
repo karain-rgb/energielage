@@ -36,6 +36,11 @@ export type MetricContext = ReferencePointsContext | SeasonalCorridorContext;
 export interface Metric {
   id: string;
   unit: string;
+  // Seit wann dieser Stand gilt — nicht wann zuletzt abgerufen wurde. Der
+  // Abruf-Job überschreibt diesen Zeitstempel nur, wenn sich sonst etwas an
+  // der Kennzahl geändert hat (siehe scripts/build-metrics.ts:gleicherInhalt);
+  // ob der Abruf überhaupt lief, steht in der Actions-Historie, und die
+  // Aktualitätswarnung in der Oberfläche stützt sich ohnehin auf sourceDate.
   fetchedAt: string;
   sourceDate: string;
   cadence: Cadence;
