@@ -102,6 +102,7 @@ npm i -D vite @vitejs/plugin-react typescript vitest tsx @types/react @types/rea
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "esModuleInterop": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true
   },
@@ -1232,7 +1233,7 @@ Zwei Kennzahlen aus einer Quelle. Die EIA-API liefert beide im selben Antwortfor
 
 **Interfaces:**
 - Consumes: `getJson`, `referencePoints`, `SeriesPoint`, `Metric`
-- Produces: `parseEia(raw: unknown): SeriesPoint[]`, `fetchEiaSeries(apiKey: string, route: string, seriesId: string): Promise<SeriesPoint[]>`, `buildBrent(...)`, `buildSpr(...)`
+- Produces: `parseEia(raw: unknown): SeriesPoint[]`, `zahlOderNaN(roh: unknown): number`, `fetchEiaSeries(apiKey: string, route: string, seriesId: string): Promise<SeriesPoint[]>`, `buildPreisMetric(id, unit, cadence, quelle, series, fetchedAt): Metric`
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
@@ -1290,6 +1291,13 @@ function normalisiereDatum(period: string): string {
   return period;
 }
 
+// Number(null) und Number("") ergeben 0, nicht NaN — fehlende Werte kämen
+// sonst als echte Null-Messwerte durch.
+export function zahlOderNaN(roh: unknown): number {
+  if (roh === null || roh === undefined || roh === "") return NaN;
+  return Number(roh);
+}
+
 export function parseEia(raw: unknown): SeriesPoint[] {
   const data = (raw as { response?: { data?: unknown } })?.response?.data;
   if (!Array.isArray(data)) return [];
@@ -1297,7 +1305,7 @@ export function parseEia(raw: unknown): SeriesPoint[] {
   const points: SeriesPoint[] = [];
   for (const row of data) {
     const period = (row as { period?: unknown }).period;
-    const v = Number((row as { value?: unknown }).value);
+    const v = zahlOderNaN((row as { value?: unknown }).value);
     if (typeof period === "string" && Number.isFinite(v)) {
       points.push({ d: normalisiereDatum(period), v });
     }
@@ -1665,6 +1673,7 @@ Expected: FAIL — Modul nicht gefunden
 
 ```ts
 import ExcelJS from "exceljs";
+import { zahlOderNaN } from "./eia";
 import type { SeriesPoint } from "../../src/types";
 
 const LAND = "Germany";
@@ -1697,7 +1706,7 @@ export function parseOilBulletin(
   for (const row of rows.slice(1)) {
     if (row[landIndex] !== LAND) continue;
     const d = alsDatum(row[datumIndex]);
-    const v = Number(row[spaltenIndex]);
+    const v = zahlOderNaN(row[spaltenIndex]);
     if (d && Number.isFinite(v)) points.push({ d, v });
   }
   return points.sort((a, b) => a.d.localeCompare(b.d));
@@ -1952,6 +1961,18 @@ function vorzeichen(pct: number): string {
   return pct > 0 ? `+${pct} %` : `${pct} %`;
 }
 
+// Vorläufige Beschriftungen. Task 11 ersetzt sie durch t(titelKey, sprache)
+// und löscht diese Tabelle.
+const LABELS: Record<string, string> = {
+  gasStorage: "Gasspeicher Deutschland",
+  benzin: "Benzin (Super E5)",
+  diesel: "Diesel",
+  heizoel: "Heizöl",
+  brent: "Rohöl Brent",
+  gasTtf: "Gaspreis Europa",
+  spr: "US-Ölreserve",
+};
+
 export function App() {
   const [offen, setOffen] = useState<string | null>(null);
 
@@ -1988,7 +2009,7 @@ export function App() {
         {ALLE_METRIKEN.map(({ metric, titelKey }) => (
           <MetricTile
             key={metric.id}
-            titel={titelKey}
+            titel={LABELS[titelKey] ?? titelKey}
             metric={metric}
             einordnung={einordnungText(metric)}
             chart={
