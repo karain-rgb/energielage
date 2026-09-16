@@ -37,4 +37,32 @@ describe("seasonalCorridor", () => {
     const ctx = seasonalCorridor([{ d: "2026-09-15", v: 68 }], "2026-09-15", 10);
     expect(ctx.typicalNow).toBeNull();
   });
+
+  it("lässt den 29. Februar aus, weil in einem 10-Jahres-Fenster nur ~3 Schaltjahre liegen (Stichprobe zu klein für eine Spanne)", () => {
+    const leapSeries: SeriesPoint[] = [
+      { d: "2016-02-28", v: 60 },
+      { d: "2016-02-29", v: 58 },
+      { d: "2016-03-01", v: 62 },
+      { d: "2020-02-28", v: 61 },
+      { d: "2020-02-29", v: 78 },
+      { d: "2020-03-01", v: 63 },
+      { d: "2024-02-28", v: 59 },
+      { d: "2024-02-29", v: 65 },
+      { d: "2024-03-01", v: 64 },
+    ];
+    const ctx = seasonalCorridor(leapSeries, "2026-03-01", 10);
+    expect(ctx.corridor.find((c) => c.md === "02-29")).toBeUndefined();
+    expect(ctx.corridor.find((c) => c.md === "02-28")).toEqual({
+      md: "02-28",
+      min: 59,
+      max: 61,
+      median: 60,
+    });
+    expect(ctx.corridor.find((c) => c.md === "03-01")).toEqual({
+      md: "03-01",
+      min: 62,
+      max: 64,
+      median: 63,
+    });
+  });
 });

@@ -1,7 +1,7 @@
 {
   "id": "gas-storage-de",
   "unit": "%",
-  "fetchedAt": "2026-09-16T16:43:31.054Z",
+  "fetchedAt": "2026-09-16T17:33:13.856Z",
   "sourceDate": "2026-09-14",
   "cadence": "daily",
   "source": {
@@ -4484,12 +4484,6 @@
         "min": 26.6,
         "max": 78.27,
         "median": 43.795
-      },
-      {
-        "md": "02-29",
-        "min": 58.08,
-        "max": 78.22,
-        "median": 68.74
       },
       {
         "md": "03-01",

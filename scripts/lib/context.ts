@@ -93,6 +93,11 @@ export function seasonalCorridor(
     // Das laufende Jahr darf nicht sein eigener Maßstab sein.
     if (year >= currentYear || year < earliestYear) continue;
     const md = p.d.slice(5, 10);
+    // 29. Februar: In einem 10-Jahres-Fenster liegen nur ~3 Schaltjahre, die Stichprobe ist
+    // zu klein für eine seriöse Spanne (Beispiel: Spannweite ~20 gegenüber ~52 bei den
+    // Nachbartagen). Der Tag wird bewusst ausgelassen statt eine unbelegte Spanne zu zeigen —
+    // bitte nicht "reparieren", das Fehlen ist Absicht.
+    if (md === "02-29") continue;
     const bucket = buckets.get(md);
     if (bucket) bucket.push(p.v);
     else buckets.set(md, [p.v]);
