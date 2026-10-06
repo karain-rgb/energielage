@@ -1,14 +1,14 @@
 {
   "id": "gas-haushalt-de",
   "unit": "EUR/kWh",
-  "fetchedAt": "2026-09-16T18:52:57.632Z",
-  "sourceDate": "2025-07-01",
+  "fetchedAt": "2026-10-06T11:16:38.011Z",
+  "sourceDate": "2026-01-01",
   "cadence": "biannual",
   "source": {
     "name": "Eurostat (nrg_pc_202)",
     "url": "https://ec.europa.eu/eurostat/databrowser/view/nrg_pc_202/default/table"
   },
-  "current": 0.1223,
+  "current": 0.1156,
   "series": [
     {
       "d": "2019-01-01",
@@ -65,21 +65,25 @@
     {
       "d": "2025-07-01",
       "v": 0.1223
+    },
+    {
+      "d": "2026-01-01",
+      "v": 0.1156
     }
   ],
   "context": {
     "kind": "reference-points",
     "yearAgo": {
-      "value": 0.1238,
-      "deltaPct": -1
+      "value": 0.1216,
+      "deltaPct": -5
     },
     "preCrisis": {
       "value": 0.06293333333333333,
-      "deltaPct": 94
+      "deltaPct": 84
     },
     "peak2022": {
       "value": 0.0941,
-      "deltaPct": 30
+      "deltaPct": 23
     }
   }
 }
