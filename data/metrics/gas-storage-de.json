@@ -1,14 +1,14 @@
 {
   "id": "gas-storage-de",
   "unit": "%",
-  "fetchedAt": "2026-10-29T10:54:02.157Z",
-  "sourceDate": "2026-10-27",
+  "fetchedAt": "2026-10-30T10:52:05.715Z",
+  "sourceDate": "2026-10-28",
   "cadence": "daily",
   "source": {
     "name": "GIE AGSI+",
     "url": "https://agsi.gie.eu/"
   },
-  "current": 61.73,
+  "current": 61.61,
   "series": [
     {
       "d": "2019-01-06",
@@ -1221,10 +1221,6 @@
     {
       "d": "2024-10-20",
       "v": 97.73
-    },
-    {
-      "d": "2024-10-26",
-      "v": 97.92
     },
     {
       "d": "2024-10-27",
@@ -4149,11 +4145,15 @@
     {
       "d": "2026-10-27",
       "v": 61.73
+    },
+    {
+      "d": "2026-10-28",
+      "v": 61.61
     }
   ],
   "context": {
     "kind": "seasonal-corridor",
-    "typicalNow": 94.625,
+    "typicalNow": 94.55,
     "corridor": [
       {
         "md": "01-01",
